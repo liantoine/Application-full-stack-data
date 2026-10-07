@@ -1,50 +1,33 @@
-# Projet démo — TP séance 2
+# GearShare API — TP séance 2 (Antoine LI)
 
-Ce dossier est le point de départ du [TP de la séance 2](../README.md). Il contient l'API en
-mémoire **telle que je l'attendais à la fin du TP de la séance 1** : le CRUD complet sur `items`,
-la ressource `reservations` telle que spécifiée en séance 1, le découpage en routers et la
-validation croisée des dates dans le schéma Pydantic.
+L'API de la séance 1 (CRUD `items`, ressource `reservations`), avec sa suite de tests pytest.
 
-Vous travaillez normalement sur **votre** API de la séance 1. Ce projet sert de secours si votre
-rendu n'est pas terminé ou n'est pas conforme, et de référence pour comparer : si un test du TP 2
-échoue chez vous et passe ici, la différence est dans votre code, pas dans le test.
-
-Il n'y a **aucun test dans ce dossier** : c'est vous qui les écrivez, à partir de l'étape 0 du
-TP. Vous y trouverez aussi, volontairement, les deux compteurs globaux `_next_id` que l'étape 1.2
-vous demande de supprimer.
-
-## Arborescence
-
-```text
-projet-demo/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── items.py
-│   │   └── reservations.py
-│   └── schemas/
-│       ├── __init__.py
-│       ├── item.py
-│       └── reservation.py
-├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
-```
+- [RAPPORT-TP2.md](RAPPORT-TP2.md) — fixtures, cas couverts, couverture, test de mutation
+- [SPEC-reservations.md](SPEC-reservations.md) et [REVIEW.md](REVIEW.md) — livrables de la séance 1
 
 ## Démarrer
-
-Depuis ce dossier :
 
 ```bash
 docker compose up --build
 ```
 
-L'API répond sur [http://localhost:8000/health](http://localhost:8000/health) et sa documentation
-interactive est disponible sur [http://localhost:8000/docs](http://localhost:8000/docs), avec les
-deux ressources `items` et `reservations`.
+API sur <http://localhost:8000/health>, documentation sur <http://localhost:8000/docs>.
 
-Le montage de volume et `--reload` sont réservés au développement : le code est rechargé à chaque
-sauvegarde sans reconstruction de l'image. L'étape 0 du TP vous fera ajouter `tests/` et
-`pytest.ini` au `Dockerfile` et au `docker-compose.yml`.
+## Lancer les tests
+
+```bash
+docker compose run --rm api pytest -v
+docker compose run --rm api pytest --cov=app --cov-report=term-missing --cov-fail-under=70
+```
+
+`app/`, `tests/` et `pytest.ini` sont montés en volume : pas besoin de reconstruire l'image après
+une modification.
+
+```text
+tests/
+├── conftest.py            # Storage, storage, client, item_velo, reservation_active
+├── test_health.py
+├── test_items.py
+├── test_reservations.py
+└── test_schemas.py        # tests unitaires Pydantic, sans HTTP
+```
