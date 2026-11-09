@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Path, Query
 
-from app.schemas.reservation import ReservationCreate, ReservationRead
+from app.schemas.reservation import ReservationCreate, ReservationRead, ReservationUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,7 @@ def get_reservation(reservation_id: int = Path(ge=1)) -> dict[str, Any]:
     return _get_or_404(reservation_id)
 
 
-@router.post("/{reservation_id}/annuler", response_model=ReservationRead)
-def cancel_reservation(reservation_id: int = Path(ge=1)) -> dict[str, Any]:
+def _annuler(reservation_id: int) -> dict[str, Any]:
     reservation = _get_or_404(reservation_id)
     if reservation["statut"] == "annulee":
         raise HTTPException(
@@ -71,3 +70,14 @@ def cancel_reservation(reservation_id: int = Path(ge=1)) -> dict[str, Any]:
     except Exception:
         logger.exception("Échec de la notification d'annulation %s", reservation_id)
     return reservation
+
+
+@router.post("/{reservation_id}/annuler", response_model=ReservationRead)
+def cancel_reservation(reservation_id: int = Path(ge=1)) -> dict[str, Any]:
+    return _annuler(reservation_id)
+
+
+# Utilisée par le frontend (séance 4) : seul le passage à "annulee" est possible
+@router.patch("/{reservation_id}", response_model=ReservationRead)
+def update_reservation(payload: ReservationUpdate, reservation_id: int = Path(ge=1)) -> dict[str, Any]:
+    return _annuler(reservation_id)

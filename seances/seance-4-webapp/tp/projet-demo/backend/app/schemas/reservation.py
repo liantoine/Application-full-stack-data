@@ -26,3 +26,9 @@ class ReservationRead(BaseModel):
     date_debut: date
     date_fin: date
     statut: StatutReservation
+
+
+class ReservationUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    statut: Literal["annulee"]
