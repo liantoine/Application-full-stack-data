@@ -5,7 +5,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, Response
 
 from app.api_client import ApiError, api_client
-from app.auth import Token
+from app.routers.items import DEMO_USER_ID
 from app.templating import templates
 
 router = APIRouter()
@@ -15,12 +15,11 @@ router = APIRouter()
 def reserver(
     request: Request,
     item_id: int,
-    token: Token,
     date_debut: Annotated[date, Form()],
     date_fin: Annotated[date, Form()],
 ) -> Response:
     try:
-        api_client.create_reservation(token, item_id, date_debut, date_fin)
+        api_client.create_reservation(item_id, DEMO_USER_ID, date_debut, date_fin)  # TODO séance 5
     except ApiError as exc:
         if exc.status_code not in (409, 422):  # 409 : créneau pris ou item indisponible
             raise
@@ -29,7 +28,7 @@ def reserver(
             "items/detail.html",
             {
                 "item": api_client.get_item(item_id),
-                "reservations": api_client.list_reservations(token, item_id),
+                "reservations": api_client.list_reservations(item_id),
                 "erreurs": exc.messages(),
                 "saisie": {"date_debut": date_debut, "date_fin": date_fin},
             },
@@ -42,12 +41,11 @@ def reserver(
 @router.post("/reservations/{reservation_id}")
 def changer_statut(
     reservation_id: int,
-    token: Token,
     statut: Annotated[str, Form()],
     item_id: Annotated[int, Form()],
 ) -> Response:
     try:
-        api_client.update_reservation(token, reservation_id, statut)
+        api_client.update_reservation(reservation_id, statut)
     except ApiError as exc:
         if exc.status_code != 409:
             raise

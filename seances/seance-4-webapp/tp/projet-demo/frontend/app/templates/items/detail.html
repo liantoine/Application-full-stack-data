@@ -18,9 +18,7 @@
   <p class="alerte alerte-erreur">Cette réservation est déjà annulée.</p>
 {% endif %}
 
-{% if reservations is none %}
-  <p><a href="/connexion?suivant=/items/{{ item.id }}">Connectez-vous</a> pour voir les réservations et réserver.</p>
-{% elif reservations %}
+{% if reservations %}
   <table>
     <thead>
       <tr><th>Du</th><th>Au</th><th>Statut</th><th></th></tr>
@@ -48,7 +46,6 @@
   <p>Aucune réservation.</p>
 {% endif %}
 
-{% if reservations is not none %}
 <h2>Réserver</h2>
 
 {% if erreurs %}
@@ -66,7 +63,6 @@
          value="{{ saisie.date_fin if saisie else '' }}" required>
   <button type="submit">Réserver</button>
 </form>
-{% endif %}
 
 <p><a href="/items">Retour à la liste</a></p>
 {% endblock %}

@@ -4,10 +4,12 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from app.api_client import ApiError, api_client
-from app.auth import Token
 from app.templating import templates
 
 router = APIRouter()
+
+# TODO séance 5 : utilisateur de démo, remplacé par l'utilisateur connecté (déduit du jeton)
+DEMO_USER_ID = 1
 
 
 @router.get("/items", response_class=HTMLResponse)
@@ -25,20 +27,20 @@ def new_item_page(request: Request) -> HTMLResponse:
 @router.post("/items")
 def create_item(
     request: Request,
-    token: Token,
     titre: Annotated[str, Form()],
     tarif_jour: Annotated[float, Form()],
     description: Annotated[str, Form()] = "",
     disponible: Annotated[bool, Form()] = False,  # case non cochée : rien n'est envoyé
 ) -> Response:
     data = {
+        "owner_id": DEMO_USER_ID,  # TODO séance 5
         "titre": titre,
         "description": description or None,
         "tarif_jour": tarif_jour,
         "disponible": disponible,
     }
     try:
-        item = api_client.create_item(token, data)
+        item = api_client.create_item(data)
     except ApiError as exc:
         if exc.status_code != 422:
             raise
@@ -52,12 +54,9 @@ def create_item(
 
 
 @router.get("/items/{item_id}", response_class=HTMLResponse)
-def item_detail_page(request: Request, item_id: int, token: Token) -> HTMLResponse:
+def item_detail_page(request: Request, item_id: int) -> HTMLResponse:
     item = api_client.get_item(item_id)
-    reservations = None
-    if token:
-        # Un jeton expiré lève un 401 : le gestionnaire global renvoie vers la connexion
-        reservations = api_client.list_reservations(token, item_id)
+    reservations = api_client.list_reservations(item_id)
     return templates.TemplateResponse(
         request, "items/detail.html", {"item": item, "reservations": reservations}
     )

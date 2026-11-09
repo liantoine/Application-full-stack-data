@@ -1,18 +1,13 @@
 from collections.abc import Generator
 from typing import Annotated
 
-import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token
 from app.db.session import SessionLocal
-from app.models.user import User
 from app.repositories.item import ItemRepository
 from app.repositories.reservation import ReservationRepository
 from app.repositories.user import UserRepository
-from app.services.auth import AuthService
 from app.services.item import ItemService
 from app.services.reservation import ReservationService
 
@@ -32,45 +27,16 @@ def get_db() -> Generator[Session, None, None]:
 
 DbSession = Annotated[Session, Depends(get_db)]
 
-# auto_error=False : sinon un jeton absent donne un autre message ("Not authenticated")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
-
-# Même réponse quelle que soit la cause : pas de jeton, malformé, expiré, utilisateur disparu
-CREDENTIALS_EXCEPTION = HTTPException(
-    status_code=401,
-    detail="Identifiants invalides",
-    headers={"WWW-Authenticate": "Bearer"},
-)
-
-
-def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)], db: DbSession) -> User:
-    if token is None:
-        raise CREDENTIALS_EXCEPTION
-    try:
-        user_id = decode_access_token(token)
-    except (jwt.PyJWTError, KeyError, ValueError):
-        raise CREDENTIALS_EXCEPTION
-    user = UserRepository(db).get(user_id)
-    if user is None:
-        raise CREDENTIALS_EXCEPTION
-    return user
-
-
-CurrentUser = Annotated[User, Depends(get_current_user)]
-
-
-def get_auth_service(db: DbSession) -> AuthService:
-    return AuthService(UserRepository(db))
-
 
 def get_item_service(db: DbSession) -> ItemService:
-    return ItemService(ItemRepository(db))
+    return ItemService(ItemRepository(db), UserRepository(db))
+
+
+ItemServiceDep = Annotated[ItemService, Depends(get_item_service)]
 
 
 def get_reservation_service(db: DbSession) -> ReservationService:
-    return ReservationService(ReservationRepository(db), ItemRepository(db))
+    return ReservationService(ReservationRepository(db), ItemRepository(db), UserRepository(db))
 
 
-AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
-ItemServiceDep = Annotated[ItemService, Depends(get_item_service)]
 ReservationServiceDep = Annotated[ReservationService, Depends(get_reservation_service)]

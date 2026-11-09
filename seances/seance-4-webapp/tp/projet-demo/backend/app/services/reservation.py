@@ -1,15 +1,19 @@
 from datetime import date
 
-from app.core.exceptions import AccesRefuse, ConflitMetier, RessourceIntrouvable
+from app.core.exceptions import ConflitMetier, RessourceIntrouvable
 from app.models.reservation import Reservation
 from app.repositories.item import ItemRepository
 from app.repositories.reservation import ReservationRepository
+from app.repositories.user import UserRepository
 
 
 class ReservationService:
-    def __init__(self, reservations: ReservationRepository, items: ItemRepository) -> None:
+    def __init__(
+        self, reservations: ReservationRepository, items: ItemRepository, users: UserRepository
+    ) -> None:
         self.reservations = reservations
         self.items = items
+        self.users = users
 
     def lister(self, *, item_id: int | None = None, skip: int = 0, limit: int = 20) -> list[Reservation]:
         return self.reservations.list(item_id=item_id, skip=skip, limit=limit)
@@ -24,6 +28,8 @@ class ReservationService:
         item = self.items.get(item_id)
         if item is None:
             raise RessourceIntrouvable(f"Item {item_id} introuvable")
+        if self.users.get(borrower_id) is None:
+            raise RessourceIntrouvable(f"Utilisateur {borrower_id} introuvable")
         if not item.disponible:
             raise ConflitMetier("Ce matériel n'est pas disponible")
         if self.reservations.find_chevauchements(item_id, debut, fin):
@@ -33,11 +39,8 @@ class ReservationService:
                         date_debut=debut, date_fin=fin, statut="active")
         )
 
-    def annuler(self, reservation_id: int, *, current_user_id: int) -> Reservation:
+    def annuler(self, reservation_id: int) -> Reservation:
         reservation = self.obtenir(reservation_id)
-        # Autorisé à l'emprunteur et au propriétaire de l'item
-        if current_user_id not in (reservation.borrower_id, reservation.item.owner_id):
-            raise AccesRefuse("Vous ne pouvez pas annuler cette réservation")
         if reservation.statut != "active":
             raise ConflitMetier(f"Réservation {reservation_id} déjà {reservation.statut}")
         reservation.statut = "annulee"

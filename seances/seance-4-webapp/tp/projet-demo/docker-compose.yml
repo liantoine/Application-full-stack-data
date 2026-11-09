@@ -38,14 +38,12 @@ services:
       - ./backend/app:/code/app
       - ./backend/alembic:/code/alembic
       - ./backend/alembic.ini:/code/alembic.ini
-      - ./backend/tests:/code/tests
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build: ./frontend
     environment:
       API_BASE_URL: http://backend:8000
-      COOKIE_SECURE: "false"
     depends_on:
       - backend
     ports:

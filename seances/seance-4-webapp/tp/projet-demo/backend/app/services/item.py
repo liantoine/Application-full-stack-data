@@ -1,13 +1,15 @@
 from typing import Any
 
-from app.core.exceptions import AccesRefuse, RessourceIntrouvable
+from app.core.exceptions import RessourceIntrouvable
 from app.models.item import Item
 from app.repositories.item import ItemRepository
+from app.repositories.user import UserRepository
 
 
 class ItemService:
-    def __init__(self, items: ItemRepository) -> None:
+    def __init__(self, items: ItemRepository, users: UserRepository) -> None:
         self.items = items
+        self.users = users
 
     def lister(self, **filtres: Any) -> list[Item]:
         return self.items.list(**filtres)
@@ -18,20 +20,17 @@ class ItemService:
             raise RessourceIntrouvable(f"Item {item_id} introuvable")
         return item
 
-    def _obtenir_en_tant_que_proprietaire(self, item_id: int, current_user_id: int) -> Item:
+    def creer(self, data: dict[str, Any]) -> Item:
+        # Vérifié ici plutôt que de laisser la FK lever une IntegrityError (500)
+        if self.users.get(data["owner_id"]) is None:
+            raise RessourceIntrouvable(f"Utilisateur {data['owner_id']} introuvable")
+        return self.items.add(Item(**data))
+
+    def modifier(self, item_id: int, changements: dict[str, Any]) -> Item:
         item = self.obtenir(item_id)
-        if item.owner_id != current_user_id:
-            raise AccesRefuse("Vous n'êtes pas le propriétaire de ce matériel")
-        return item
-
-    def creer(self, data: dict[str, Any], *, owner_id: int) -> Item:
-        return self.items.add(Item(**data, owner_id=owner_id))
-
-    def modifier(self, item_id: int, changements: dict[str, Any], *, current_user_id: int) -> Item:
-        item = self._obtenir_en_tant_que_proprietaire(item_id, current_user_id)
         for champ, valeur in changements.items():
             setattr(item, champ, valeur)
         return self.items.add(item)
 
-    def supprimer(self, item_id: int, *, current_user_id: int) -> None:
-        self.items.delete(self._obtenir_en_tant_que_proprietaire(item_id, current_user_id))
+    def supprimer(self, item_id: int) -> None:
+        self.items.delete(self.obtenir(item_id))
