@@ -32,7 +32,8 @@ def get_db() -> Generator[Session, None, None]:
 
 DbSession = Annotated[Session, Depends(get_db)]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+# auto_error=False : sinon un jeton absent donne un autre message ("Not authenticated")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 # Même réponse quelle que soit la cause : pas de jeton, malformé, expiré, utilisateur disparu
 CREDENTIALS_EXCEPTION = HTTPException(
@@ -42,7 +43,9 @@ CREDENTIALS_EXCEPTION = HTTPException(
 )
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DbSession) -> User:
+def get_current_user(token: Annotated[str | None, Depends(oauth2_scheme)], db: DbSession) -> User:
+    if token is None:
+        raise CREDENTIALS_EXCEPTION
     try:
         user_id = decode_access_token(token)
     except (jwt.PyJWTError, KeyError, ValueError):
