@@ -8,7 +8,6 @@ class ReservationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     item_id: int = Field(ge=1)
-    borrower_id: int = Field(ge=1)  # TODO séance 5 : déduit du jeton
     date_debut: date
     date_fin: date = Field(description="Strictement postérieure à date_debut.")
 
