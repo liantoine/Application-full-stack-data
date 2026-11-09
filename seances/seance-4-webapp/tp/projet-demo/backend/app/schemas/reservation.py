@@ -3,13 +3,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-StatutReservation = Literal["active", "annulee"]
-
 
 class ReservationCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     item_id: int = Field(ge=1)
+    borrower_id: int = Field(ge=1)  # TODO séance 5 : déduit du jeton
     date_debut: date
     date_fin: date = Field(description="Strictement postérieure à date_debut.")
 
@@ -20,15 +19,18 @@ class ReservationCreate(BaseModel):
         return self
 
 
-class ReservationRead(BaseModel):
-    id: int
-    item_id: int
-    date_debut: date
-    date_fin: date
-    statut: StatutReservation
-
-
 class ReservationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     statut: Literal["annulee"]
+
+
+class ReservationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    item_id: int
+    borrower_id: int
+    date_debut: date
+    date_fin: date
+    statut: Literal["active", "annulee", "terminee"]
