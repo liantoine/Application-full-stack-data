@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.user import OwnerRead
+
 
 class ItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -42,3 +44,4 @@ class ItemRead(BaseModel):
     description: str | None
     tarif_jour: Decimal
     disponible: bool
+    owner: OwnerRead

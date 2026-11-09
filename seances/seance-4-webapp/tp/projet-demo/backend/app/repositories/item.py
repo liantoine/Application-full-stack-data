@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.item import Item
 
@@ -14,7 +14,8 @@ class ItemRepository:
     def list(
         self, *, skip: int = 0, limit: int = 20, q: str | None = None, disponible: bool | None = None
     ) -> list[Item]:
-        stmt = select(Item)
+        # selectinload : les propriétaires en une seule requête (sinon N+1 à la sérialisation de ItemRead.owner)
+        stmt = select(Item).options(selectinload(Item.owner))
         if q:
             stmt = stmt.where(Item.titre.ilike(f"%{q}%"))  # valeur paramétrée, pas de SQL concaténé
         if disponible is not None:
