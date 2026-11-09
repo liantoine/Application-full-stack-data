@@ -13,12 +13,25 @@ services:
       timeout: 3s
       retries: 10
 
-  backend:
+  # Applique les migrations une fois puis s'arrête ; le backend attend qu'il ait réussi
+  migrate:
     build: ./backend
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./backend/app:/code/app
+      - ./backend/alembic:/code/alembic
+      - ./backend/alembic.ini:/code/alembic.ini
+    command: alembic upgrade head
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
     volumes:
