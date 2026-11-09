@@ -8,6 +8,9 @@ from app.templating import templates
 
 router = APIRouter()
 
+# TODO séance 5 : utilisateur de démo, remplacé par l'utilisateur connecté (déduit du jeton)
+DEMO_USER_ID = 1
+
 
 @router.get("/items", response_class=HTMLResponse)
 def list_items_page(request: Request) -> HTMLResponse:
@@ -30,6 +33,7 @@ def create_item(
     disponible: Annotated[bool, Form()] = False,  # case non cochée : rien n'est envoyé
 ) -> Response:
     data = {
+        "owner_id": DEMO_USER_ID,  # TODO séance 5
         "titre": titre,
         "description": description or None,
         "tarif_jour": tarif_jour,

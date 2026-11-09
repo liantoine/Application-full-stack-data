@@ -5,6 +5,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, Response
 
 from app.api_client import ApiError, api_client
+from app.routers.items import DEMO_USER_ID
 from app.templating import templates
 
 router = APIRouter()
@@ -18,9 +19,9 @@ def reserver(
     date_fin: Annotated[date, Form()],
 ) -> Response:
     try:
-        api_client.create_reservation(item_id, date_debut, date_fin)
+        api_client.create_reservation(item_id, DEMO_USER_ID, date_debut, date_fin)  # TODO séance 5
     except ApiError as exc:
-        if exc.status_code != 422:
+        if exc.status_code not in (409, 422):  # 409 : créneau pris ou item indisponible
             raise
         return templates.TemplateResponse(
             request,
@@ -31,7 +32,7 @@ def reserver(
                 "erreurs": exc.messages(),
                 "saisie": {"date_debut": date_debut, "date_fin": date_fin},
             },
-            status_code=422,
+            status_code=exc.status_code,
         )
     return RedirectResponse(f"/items/{item_id}?reservation=ok", status_code=303)
 
