@@ -11,6 +11,15 @@
     <nav>
       <a href="/" class="logo">GearShare</a>
       <a href="/items">Objets</a>
+      {# Affichage seulement : seul le backend sait si le jeton est encore valide #}
+      {% if request.cookies.get("access_token") %}
+        <form method="post" action="/deconnexion">
+          <button type="submit">Se déconnecter</button>
+        </form>
+      {% else %}
+        <a href="/connexion">Se connecter</a>
+        <a href="/inscription">S'inscrire</a>
+      {% endif %}
     </nav>
   </header>
   <main>
