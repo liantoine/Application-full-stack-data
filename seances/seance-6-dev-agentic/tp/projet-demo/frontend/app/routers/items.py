@@ -1,0 +1,74 @@
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+
+from app.api_client import ApiError, api_client
+from app.auth import Token
+from app.templating import templates
+
+router = APIRouter()
+
+
+@router.get("/items", response_class=HTMLResponse)
+def list_items_page(request: Request) -> HTMLResponse:
+    items = api_client.list_items()
+    return templates.TemplateResponse(request, "items/list.html", {"items": items})
+
+
+# Avant /items/{item_id}, sinon "new" est lu comme un item_id
+@router.get("/items/new", response_class=HTMLResponse)
+def new_item_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "items/form.html", {"saisie": {"disponible": True}})
+
+
+@router.post("/items")
+def create_item(
+    request: Request,
+    token: Token,
+    titre: Annotated[str, Form()],
+    tarif_jour: Annotated[float, Form()],
+    description: Annotated[str, Form()] = "",
+    disponible: Annotated[bool, Form()] = False,  # case non cochée : rien n'est envoyé
+) -> Response:
+    data = {
+        "titre": titre,
+        "description": description or None,
+        "tarif_jour": tarif_jour,
+        "disponible": disponible,
+    }
+    try:
+        item = api_client.create_item(token, data)
+    except ApiError as exc:
+        if exc.status_code != 422:
+            raise
+        return templates.TemplateResponse(
+            request,
+            "items/form.html",
+            {"erreurs": exc.messages(), "saisie": {**data, "description": description}},
+            status_code=422,
+        )
+    return RedirectResponse(f"/items/{item['id']}", status_code=303)
+
+
+def contexte_annonce(item_id: int, token: str | None) -> dict[str, Any]:
+    """Données de la page annonce, partagées avec les formulaires qui la réaffichent en erreur."""
+    reputation = api_client.get_reputation(item_id)
+    contexte: dict[str, Any] = {
+        "item": api_client.get_item(item_id),
+        "reputation": reputation,
+        "avis_par_reservation": {a["reservation_id"] for a in reputation["avis"]},
+        "reservations": None,
+        "moi": None,
+    }
+    if token:
+        # Un jeton expiré lève un 401 : le gestionnaire global renvoie vers la connexion
+        contexte["reservations"] = api_client.list_reservations(token, item_id)
+        # Sert seulement à choisir les boutons affichés : le backend revérifie chaque action
+        contexte["moi"] = api_client.me(token)
+    return contexte
+
+
+@router.get("/items/{item_id}", response_class=HTMLResponse)
+def item_detail_page(request: Request, item_id: int, token: Token) -> HTMLResponse:
+    return templates.TemplateResponse(request, "items/detail.html", contexte_annonce(item_id, token))

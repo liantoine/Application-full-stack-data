@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.titre }} - GearShare{% endblock %}
+
+{% block content %}
+<h1>{{ item.titre }}</h1>
+
+<p>{{ item.description or "Pas de description." }}</p>
+<p>Tarif : {{ item.tarif_jour }} € / jour</p>
+<p>Statut : {{ "Disponible" if item.disponible else "Indisponible" }}</p>
+<p>Proposé par {{ item.owner.display_name }}</p>
+
+<h2>Avis</h2>
+
+{% if request.query_params.get("avis") == "ok" %}
+  <p class="alerte alerte-succes">Merci, votre avis est enregistré.</p>
+{% endif %}
+
+{% if reputation.nombre_avis %}
+  <p class="note-moyenne">
+    {{ "%.1f"|format(reputation.note_moyenne) }} / 5
+    ({{ reputation.nombre_avis }} avis)
+  </p>
+  <ul class="avis">
+    {% for avis in reputation.avis %}
+      <li>
+        <strong>{{ avis.note }} / 5</strong> par {{ avis.auteur.display_name }}
+        {% if avis.commentaire %}<p>{{ avis.commentaire }}</p>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Pas encore d'avis.</p>
+{% endif %}
+
+<h2>Réservations</h2>
+
+{% if request.query_params.get("reservation") == "ok" %}
+  <p class="alerte alerte-succes">Votre réservation est enregistrée.</p>
+{% endif %}
+{% if request.query_params.get("statut") == "conflit" %}
+  <p class="alerte alerte-erreur">Cette réservation n'est plus active.</p>
+{% endif %}
+{% if erreurs_avis %}
+  <ul class="alerte alerte-erreur">
+    {% for erreur in erreurs_avis %}<li>{{ erreur }}</li>{% endfor %}
+  </ul>
+{% endif %}
+
+{% if reservations is none %}
+  <p><a href="/connexion?suivant=/items/{{ item.id }}">Connectez-vous</a> pour voir les réservations et réserver.</p>
+{% elif reservations %}
+  {% set est_preteur = moi.id == item.owner_id %}
+  <table>
+    <thead>
+      <tr><th>Du</th><th>Au</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for reservation in reservations %}
+        {% set est_emprunteur = moi.id == reservation.borrower_id %}
+        <tr>
+          <td>{{ reservation.date_debut }}</td>
+          <td>{{ reservation.date_fin }}</td>
+          <td>{{ reservation.statut }}</td>
+          <td>
+            {% if reservation.statut == "active" and (est_preteur or est_emprunteur) %}
+              <form method="post" action="/reservations/{{ reservation.id }}">
+                <input type="hidden" name="statut" value="annulee">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <button type="submit">Annuler</button>
+              </form>
+            {% endif %}
+            {% if reservation.statut == "active" and est_preteur %}
+              <form method="post" action="/reservations/{{ reservation.id }}">
+                <input type="hidden" name="statut" value="terminee">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <button type="submit">Clôturer (matériel rendu)</button>
+              </form>
+            {% endif %}
+            {% if reservation.statut == "terminee" and est_emprunteur %}
+              {% if reservation.id in avis_par_reservation %}
+                Avis laissé
+              {% else %}
+                {% set valeurs = saisie_avis if saisie_avis and saisie_avis.reservation_id == reservation.id else {} %}
+                <form method="post" action="/reservations/{{ reservation.id }}/avis">
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <label for="note-{{ reservation.id }}">Note (1 à 5)</label>
+                  <input type="number" id="note-{{ reservation.id }}" name="note" min="1" max="5" step="1"
+                         value="{{ valeurs.note or '' }}" required>
+                  <label for="commentaire-{{ reservation.id }}">Commentaire (facultatif)</label>
+                  <textarea id="commentaire-{{ reservation.id }}" name="commentaire" maxlength="1000"
+                            rows="3">{{ valeurs.commentaire or '' }}</textarea>
+                  <button type="submit">Laisser un avis</button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>Aucune réservation.</p>
+{% endif %}
+
+{% if reservations is not none %}
+<h2>Réserver</h2>
+
+{% if erreurs %}
+  <ul class="alerte alerte-erreur">
+    {% for erreur in erreurs %}<li>{{ erreur }}</li>{% endfor %}
+  </ul>
+{% endif %}
+
+<form method="post" action="/items/{{ item.id }}/reservations">
+  <label for="date_debut">Du</label>
+  <input type="date" id="date_debut" name="date_debut"
+         value="{{ saisie.date_debut if saisie else '' }}" required>
+  <label for="date_fin">Au</label>
+  <input type="date" id="date_fin" name="date_fin"
+         value="{{ saisie.date_fin if saisie else '' }}" required>
+  <button type="submit">Réserver</button>
+</form>
+{% endif %}
+
+<p><a href="/items">Retour à la liste</a></p>
+{% endblock %}
