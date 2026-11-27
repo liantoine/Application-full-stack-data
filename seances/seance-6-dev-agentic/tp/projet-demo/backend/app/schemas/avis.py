@@ -22,3 +22,10 @@ class AvisRead(BaseModel):
     commentaire: str | None
     auteur: OwnerRead
     created_at: datetime
+
+
+class ReputationRead(BaseModel):
+    item_id: int
+    nombre_avis: int
+    note_moyenne: float | None  # None sans avis : pas de 0/5 trompeur
+    avis: list[AvisRead]

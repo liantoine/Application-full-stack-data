@@ -1,8 +1,10 @@
+from typing import Any
+
 from fastapi import APIRouter, Path
 
 from app.api.deps import AvisServiceDep, CurrentUser
 from app.models.avis import Avis
-from app.schemas.avis import AvisCreate, AvisRead
+from app.schemas.avis import AvisCreate, AvisRead, ReputationRead
 
 router = APIRouter(tags=["avis"])
 
@@ -21,3 +23,9 @@ def create_avis(
         note=payload.note,
         commentaire=payload.commentaire,
     )
+
+
+# Publique, comme GET /items/{item_id} : la réputation sert justement aux visiteurs
+@router.get("/items/{item_id}/avis", response_model=ReputationRead)
+def get_reputation(service: AvisServiceDep, item_id: int = Path(ge=1)) -> dict[str, Any]:
+    return service.reputation(item_id)

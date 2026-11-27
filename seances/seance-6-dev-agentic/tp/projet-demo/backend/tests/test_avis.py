@@ -3,12 +3,15 @@
 Alice possède `item_velo`, Bob l'emprunte ; `pret_termine` = sa réservation clôturée par Alice.
 """
 
+from datetime import date
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflitMetier
-from app.models import Avis, Reservation, User
+from app.models import Avis, Item, Reservation, User
 from app.repositories.avis import AvisRepository
 
 
@@ -139,3 +142,75 @@ def test_auteur_dans_le_corps_refuse(
 
     assert response.status_code == 422
     assert _nb_avis(db) == 0
+
+
+# --- US-03 : voir la réputation d'une annonce ---
+
+
+def _pret_avec_avis(
+    db: Session, item: Item, emprunteur: User, mois: int, note: int, commentaire: str | None
+) -> Avis:
+    reservation = Reservation(
+        item_id=item.id, borrower_id=emprunteur.id, statut="terminee",
+        date_debut=date(2026, mois, 1), date_fin=date(2026, mois, 3),
+    )
+    db.add(reservation)
+    db.flush()
+    avis = Avis(reservation_id=reservation.id, note=note, commentaire=commentaire)
+    db.add(avis)
+    db.flush()
+    return avis
+
+
+def test_ac_03_1_moyenne_nombre_et_avis_visibles_sans_connexion(
+    client: TestClient, db: Session, item_velo: Item, bob: User, carol: User
+) -> None:
+    _pret_avec_avis(db, item_velo, bob, 6, 4, "Bien")
+    _pret_avec_avis(db, item_velo, carol, 7, 5, None)
+
+    response = client.get(f"/items/{item_velo.id}/avis")
+
+    assert response.status_code == 200
+    reputation = response.json()
+    assert reputation["nombre_avis"] == 2
+    assert reputation["note_moyenne"] == 4.5
+    vus = {(a["auteur"]["display_name"], a["note"], a["commentaire"]) for a in reputation["avis"]}
+    assert vus == {("Bob", 4, "Bien"), ("Carol", 5, None)}
+
+
+def test_ac_03_2_annonce_sans_avis(client: TestClient, item_velo: Item) -> None:
+    response = client.get(f"/items/{item_velo.id}/avis")
+
+    assert response.status_code == 200
+    assert response.json() == {"item_id": item_velo.id, "nombre_avis": 0, "note_moyenne": None, "avis": []}
+
+
+def test_ac_03_3_reputation_d_une_annonce_inexistante(client: TestClient) -> None:
+    response = client.get("/items/999999/avis")
+
+    assert response.status_code == 404
+
+
+def test_ac_03_4_seuls_les_avis_de_l_annonce_sont_comptes(
+    client: TestClient, db: Session, item_velo: Item, bob: User, carol: User
+) -> None:
+    tente = Item(owner_id=carol.id, titre="Tente 2 places", tarif_jour=Decimal("12"))
+    db.add(tente)
+    db.flush()
+    _pret_avec_avis(db, item_velo, bob, 6, 2, None)
+    _pret_avec_avis(db, tente, bob, 6, 5, None)
+
+    reputation = client.get(f"/items/{item_velo.id}/avis").json()
+
+    assert reputation["nombre_avis"] == 1
+    assert reputation["note_moyenne"] == 2
+    assert [a["note"] for a in reputation["avis"]] == [2]
+
+
+def test_moyenne_arrondie_a_deux_decimales(
+    client: TestClient, db: Session, item_velo: Item, bob: User, carol: User, alice: User
+) -> None:
+    for mois, (emprunteur, note) in enumerate([(bob, 4), (carol, 4), (alice, 5)], start=6):
+        _pret_avec_avis(db, item_velo, emprunteur, mois, note, None)
+
+    assert client.get(f"/items/{item_velo.id}/avis").json()["note_moyenne"] == 4.33

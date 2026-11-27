@@ -74,7 +74,7 @@ def get_reservation_service(db: DbSession) -> ReservationService:
 
 
 def get_avis_service(db: DbSession) -> AvisService:
-    return AvisService(AvisRepository(db), ReservationRepository(db))
+    return AvisService(AvisRepository(db), ReservationRepository(db), ItemRepository(db))
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

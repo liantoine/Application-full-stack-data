@@ -148,6 +148,7 @@ Décisions techniques :
   - `backend/app/repositories/avis.py`
   - `backend/app/services/avis.py`
   - `backend/app/routers/avis.py`
+  - `backend/app/api/deps.py` (`ItemRepository` passé à `AvisService`, ajouté en cours d'étape)
   - `backend/tests/test_avis.py`
   - `backend/tests/test_autorisation.py`
 - **Changements** :
@@ -160,6 +161,7 @@ Décisions techniques :
   - `test_ac_03_2_annonce_sans_avis`
   - `test_ac_03_3_reputation_d_une_annonce_inexistante`
   - `test_ac_03_4_seuls_les_avis_de_l_annonce_sont_comptes`
+  - `test_moyenne_arrondie_a_deux_decimales`
   - lignes `GET /items/{item}/avis` dans la matrice
 - **Critères d'acceptation couverts** : AC-03.1 à AC-03.4
 - **Vérification** :

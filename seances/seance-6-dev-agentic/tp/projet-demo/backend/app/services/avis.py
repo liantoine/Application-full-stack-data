@@ -1,13 +1,30 @@
+from typing import Any
+
 from app.core.exceptions import AccesRefuse, ConflitMetier, RessourceIntrouvable
 from app.models.avis import Avis
 from app.repositories.avis import AvisRepository
+from app.repositories.item import ItemRepository
 from app.repositories.reservation import ReservationRepository
 
 
 class AvisService:
-    def __init__(self, avis: AvisRepository, reservations: ReservationRepository) -> None:
+    def __init__(
+        self, avis: AvisRepository, reservations: ReservationRepository, items: ItemRepository
+    ) -> None:
         self.avis = avis
         self.reservations = reservations
+        self.items = items
+
+    def reputation(self, item_id: int) -> dict[str, Any]:
+        if self.items.get(item_id) is None:
+            raise RessourceIntrouvable(f"Item {item_id} introuvable")
+        nombre, moyenne = self.avis.resume(item_id)
+        return {
+            "item_id": item_id,
+            "nombre_avis": nombre,
+            "note_moyenne": round(float(moyenne), 2) if moyenne is not None else None,
+            "avis": self.avis.list_par_item(item_id),
+        }
 
     def creer(
         self, reservation_id: int, *, current_user_id: int, note: int, commentaire: str | None
