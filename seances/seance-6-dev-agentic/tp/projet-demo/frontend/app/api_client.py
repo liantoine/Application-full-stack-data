@@ -60,6 +60,9 @@ class ApiClient:
             json={"email": email, "password": password, "display_name": display_name},
         )
 
+    def me(self, token: str | None) -> dict[str, Any]:
+        return self._send("GET", "/auth/me", token=token)
+
     def list_items(self, limit: int = 20) -> list[dict[str, Any]]:
         return self._send("GET", "/items", params={"limit": limit})
 
@@ -84,6 +87,19 @@ class ApiClient:
 
     def update_reservation(self, token: str | None, reservation_id: int, statut: str) -> dict[str, Any]:
         return self._send("PATCH", f"/reservations/{reservation_id}", token=token, json={"statut": statut})
+
+    def get_reputation(self, item_id: int) -> dict[str, Any]:
+        return self._send("GET", f"/items/{item_id}/avis")
+
+    def create_avis(
+        self, token: str | None, reservation_id: int, note: int | str, commentaire: str | None
+    ) -> dict[str, Any]:
+        return self._send(
+            "POST",
+            f"/reservations/{reservation_id}/avis",
+            token=token,
+            json={"note": note, "commentaire": commentaire},
+        )
 
 
 api_client = ApiClient(base_url=os.environ["API_BASE_URL"])

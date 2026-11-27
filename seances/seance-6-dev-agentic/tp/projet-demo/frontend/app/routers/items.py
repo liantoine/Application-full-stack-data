@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -51,13 +51,24 @@ def create_item(
     return RedirectResponse(f"/items/{item['id']}", status_code=303)
 
 
-@router.get("/items/{item_id}", response_class=HTMLResponse)
-def item_detail_page(request: Request, item_id: int, token: Token) -> HTMLResponse:
-    item = api_client.get_item(item_id)
-    reservations = None
+def contexte_annonce(item_id: int, token: str | None) -> dict[str, Any]:
+    """Données de la page annonce, partagées avec les formulaires qui la réaffichent en erreur."""
+    reputation = api_client.get_reputation(item_id)
+    contexte: dict[str, Any] = {
+        "item": api_client.get_item(item_id),
+        "reputation": reputation,
+        "avis_par_reservation": {a["reservation_id"] for a in reputation["avis"]},
+        "reservations": None,
+        "moi": None,
+    }
     if token:
         # Un jeton expiré lève un 401 : le gestionnaire global renvoie vers la connexion
-        reservations = api_client.list_reservations(token, item_id)
-    return templates.TemplateResponse(
-        request, "items/detail.html", {"item": item, "reservations": reservations}
-    )
+        contexte["reservations"] = api_client.list_reservations(token, item_id)
+        # Sert seulement à choisir les boutons affichés : le backend revérifie chaque action
+        contexte["moi"] = api_client.me(token)
+    return contexte
+
+
+@router.get("/items/{item_id}", response_class=HTMLResponse)
+def item_detail_page(request: Request, item_id: int, token: Token) -> HTMLResponse:
+    return templates.TemplateResponse(request, "items/detail.html", contexte_annonce(item_id, token))

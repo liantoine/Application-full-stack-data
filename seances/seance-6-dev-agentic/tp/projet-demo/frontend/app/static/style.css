@@ -69,3 +69,9 @@ nav form button {
   background: none;
   color: white;
 }
+
+.note-moyenne { font-size: 1.25rem; font-weight: bold; }
+.avis         { list-style: none; padding: 0; }
+.avis li      { padding: 0.5rem 0; border-bottom: 1px solid var(--couleur-bordure); }
+.avis p       { margin: 0.25rem 0 0; }
+td form       { margin-bottom: 0.5rem; }
