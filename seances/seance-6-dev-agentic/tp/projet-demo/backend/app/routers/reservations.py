@@ -38,7 +38,7 @@ def get_reservation(
     return service.obtenir(reservation_id)
 
 
-# Seul changement possible pour l'instant : statut -> "annulee"
+# Changements possibles : statut -> "annulee" ou "terminee" (clôture du prêt)
 @router.patch("/{reservation_id}", response_model=ReservationRead)
 def update_reservation(
     payload: ReservationUpdate,
@@ -46,4 +46,4 @@ def update_reservation(
     service: ReservationServiceDep,
     reservation_id: int = Path(ge=1),
 ) -> Reservation:
-    return service.annuler(reservation_id, current_user_id=current_user.id)
+    return service.changer_statut(reservation_id, payload.statut, current_user_id=current_user.id)

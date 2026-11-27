@@ -42,3 +42,18 @@ class ReservationService:
             raise ConflitMetier(f"Réservation {reservation_id} déjà {reservation.statut}")
         reservation.statut = "annulee"
         return self.reservations.add(reservation)
+
+    def cloturer(self, reservation_id: int, *, current_user_id: int) -> Reservation:
+        reservation = self.obtenir(reservation_id)
+        # Seul le prêteur sait si le matériel est rendu
+        if current_user_id != reservation.item.owner_id:
+            raise AccesRefuse("Seul le propriétaire du matériel peut clôturer ce prêt")
+        if reservation.statut != "active":
+            raise ConflitMetier(f"Réservation {reservation_id} déjà {reservation.statut}")
+        reservation.statut = "terminee"
+        return self.reservations.add(reservation)
+
+    def changer_statut(self, reservation_id: int, statut: str, *, current_user_id: int) -> Reservation:
+        if statut == "terminee":
+            return self.cloturer(reservation_id, current_user_id=current_user_id)
+        return self.annuler(reservation_id, current_user_id=current_user_id)

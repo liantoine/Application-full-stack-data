@@ -21,7 +21,8 @@ class ReservationCreate(BaseModel):
 class ReservationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    statut: Literal["annulee"]
+    # annulee : emprunteur ou prêteur ; terminee : prêteur seulement (vérifié dans le service)
+    statut: Literal["annulee", "terminee"]
 
 
 class ReservationRead(BaseModel):

@@ -43,6 +43,11 @@ MATRICE = [
     ("PATCH", "/reservations/{resa}", {"statut": "annulee"}, "client_bob", 200),
     ("PATCH", "/reservations/{resa}", {"statut": "annulee"}, "client_alice", 200),
     ("PATCH", "/reservations/{resa}", {"statut": "annulee"}, "client_carol", 403),
+    # Clôture : propriétaire de l'item seulement
+    ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client", 401),
+    ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_alice", 200),
+    ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_bob", 403),
+    ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_carol", 403),
     ("GET", "/auth/me", None, "client", 401),
     ("GET", "/auth/me", None, "client_alice", 200),
     ("GET", "/auth/me", None, "client_bob", 200),
