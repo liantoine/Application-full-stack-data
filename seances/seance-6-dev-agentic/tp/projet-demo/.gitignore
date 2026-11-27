@@ -6,3 +6,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 .DS_Store
+
+# Le .gitignore racine ignore ces fichiers ; ici ce sont des rendus de la séance 6
+!AGENTS.md
+!.claude/
