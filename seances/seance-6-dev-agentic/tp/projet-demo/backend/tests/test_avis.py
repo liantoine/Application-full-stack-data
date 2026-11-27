@@ -100,6 +100,8 @@ def test_ac_02_6_doublon_simultane_bloque_par_la_base(
 ) -> None:
     # Deux requêtes passent le contrôle du service en même temps : c'est le UNIQUE qui tranche.
     # Simulé en insérant l'avis "concurrent" juste avant l'écriture du repository.
+    # Revue : sans le UNIQUE, ce test passe au rouge alors que le précédent reste vert
+    # (le service bloque déjà le doublon séquentiel) ; d'où les deux tests.
     db.add(Avis(reservation_id=pret_termine.id, note=3))
     db.flush()
 
