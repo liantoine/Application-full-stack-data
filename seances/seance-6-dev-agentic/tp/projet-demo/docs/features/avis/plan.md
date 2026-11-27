@@ -111,6 +111,8 @@ Décisions techniques :
   - `backend/app/routers/avis.py` (nouveau)
   - `backend/app/api/deps.py`
   - `backend/app/main.py`
+  - `backend/app/models/avis.py` (propriété `auteur`, ajoutée en cours d'étape)
+  - `backend/tests/conftest.py` (fixture `pret_termine` partagée, ajoutée en cours d'étape)
   - `backend/tests/test_avis.py` (nouveau)
   - `backend/tests/test_autorisation.py`
 - **Changements** :
@@ -126,6 +128,7 @@ Décisions techniques :
   - `test_ac_02_4_avis_par_le_preteur_ou_un_tiers_refuse` (paramétré Alice, Carol)
   - `test_ac_02_5_avis_sur_un_pret_non_termine_refuse` (paramétré active, annulee)
   - `test_ac_02_6_un_second_avis_est_refuse`
+  - `test_ac_02_6_doublon_simultane_bloque_par_la_base` : le `UNIQUE` traduit en conflit
   - `test_ac_02_7_note_hors_bornes_refusee` (paramétré 0, 6, 3.5)
   - `test_ac_02_8_commentaire_trop_long_refuse`
   - `test_ac_02_9_avis_sur_une_reservation_inexistante`

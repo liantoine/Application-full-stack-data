@@ -8,12 +8,13 @@ from app.core.exceptions import (
     EmailDejaUtilise,
     RessourceIntrouvable,
 )
-from app.routers import auth, items, reservations
+from app.routers import auth, avis, items, reservations
 
 app = FastAPI(title="GearShare API", version="0.4.0")
 app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(reservations.router)
+app.include_router(avis.router)
 
 STATUS_PAR_EXCEPTION: dict[type[DomainError], int] = {
     RessourceIntrouvable: 404,

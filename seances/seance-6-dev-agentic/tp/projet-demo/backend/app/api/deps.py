@@ -9,10 +9,12 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_access_token
 from app.db.session import SessionLocal
 from app.models.user import User
+from app.repositories.avis import AvisRepository
 from app.repositories.item import ItemRepository
 from app.repositories.reservation import ReservationRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
+from app.services.avis import AvisService
 from app.services.item import ItemService
 from app.services.reservation import ReservationService
 
@@ -71,6 +73,11 @@ def get_reservation_service(db: DbSession) -> ReservationService:
     return ReservationService(ReservationRepository(db), ItemRepository(db))
 
 
+def get_avis_service(db: DbSession) -> AvisService:
+    return AvisService(AvisRepository(db), ReservationRepository(db))
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 ItemServiceDep = Annotated[ItemService, Depends(get_item_service)]
 ReservationServiceDep = Annotated[ReservationService, Depends(get_reservation_service)]
+AvisServiceDep = Annotated[AvisService, Depends(get_avis_service)]

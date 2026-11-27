@@ -28,3 +28,7 @@ class Avis(Base):
     )
 
     reservation: Mapped["Reservation"] = relationship(back_populates="avis")
+
+    @property
+    def auteur(self) -> "User":
+        return self.reservation.borrower

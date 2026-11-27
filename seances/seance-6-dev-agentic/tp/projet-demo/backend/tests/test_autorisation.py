@@ -48,6 +48,11 @@ MATRICE = [
     ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_alice", 200),
     ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_bob", 403),
     ("PATCH", "/reservations/{resa}", {"statut": "terminee"}, "client_carol", 403),
+    # Avis (reservation_bob est active : Bob passe l'autorisation puis bute sur le statut)
+    ("POST", "/reservations/{resa}/avis", {"note": 4}, "client", 401),
+    ("POST", "/reservations/{resa}/avis", {"note": 4}, "client_alice", 403),
+    ("POST", "/reservations/{resa}/avis", {"note": 4}, "client_carol", 403),
+    ("POST", "/reservations/{resa}/avis", {"note": 4}, "client_bob", 409),
     ("GET", "/auth/me", None, "client", 401),
     ("GET", "/auth/me", None, "client_alice", 200),
     ("GET", "/auth/me", None, "client_bob", 200),

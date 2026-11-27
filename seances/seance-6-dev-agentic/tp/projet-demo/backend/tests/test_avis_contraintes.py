@@ -12,13 +12,6 @@ from sqlalchemy.orm import Session
 from app.models import Avis, Item, Reservation
 
 
-@pytest.fixture
-def pret_termine(db: Session, reservation_bob: Reservation) -> Reservation:
-    reservation_bob.statut = "terminee"
-    db.flush()
-    return reservation_bob
-
-
 @pytest.mark.parametrize("note", [0, 6])
 def test_contrainte_note_hors_bornes_refusee_en_base(
     db: Session, pret_termine: Reservation, note: int

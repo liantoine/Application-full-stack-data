@@ -108,3 +108,11 @@ def reservation_bob(db: Session, item_velo: Item, bob: User) -> Reservation:
     db.add(reservation)
     db.flush()
     return reservation
+
+
+@pytest.fixture
+def pret_termine(db: Session, reservation_bob: Reservation) -> Reservation:
+    """La réservation de Bob, clôturée par Alice : Bob peut laisser un avis."""
+    reservation_bob.statut = "terminee"
+    db.flush()
+    return reservation_bob
