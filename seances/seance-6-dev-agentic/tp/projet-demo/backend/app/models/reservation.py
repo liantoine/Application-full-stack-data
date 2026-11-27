@@ -31,3 +31,7 @@ class Reservation(Base):
 
     item: Mapped["Item"] = relationship(back_populates="reservations")
     borrower: Mapped["User"] = relationship(back_populates="reservations")
+    # passive_deletes : on laisse le ON DELETE CASCADE de la base supprimer l'avis
+    avis: Mapped["Avis | None"] = relationship(
+        back_populates="reservation", cascade="all, delete-orphan", passive_deletes=True
+    )
