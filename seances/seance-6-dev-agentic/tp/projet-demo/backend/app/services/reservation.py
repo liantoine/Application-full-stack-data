@@ -54,6 +54,7 @@ class ReservationService:
         return self.reservations.add(reservation)
 
     def changer_statut(self, reservation_id: int, statut: str, *, current_user_id: int) -> Reservation:
-        if statut == "terminee":
-            return self.cloturer(reservation_id, current_user_id=current_user_id)
-        return self.annuler(reservation_id, current_user_id=current_user_id)
+        actions = {"annulee": self.annuler, "terminee": self.cloturer}
+        if statut not in actions:  # le schéma filtre déjà ; garde-fou si un statut y est ajouté
+            raise ValueError(f"Changement de statut non géré : {statut}")
+        return actions[statut](reservation_id, current_user_id=current_user_id)
